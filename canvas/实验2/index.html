@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style type="text/css">
+        body, html {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+</head>
+<body>
+<canvas id="target"></canvas>
+<script type="application/javascript">
+
+    let canvas = document.getElementById("target");
+    canvas.width = document.body.clientWidth;
+    canvas.height = document.body.clientHeight;
+    let ctx = canvas.getContext("2d");
+
+    const poleLeftTopX = 300;
+    const poleLeftTopY = 300;
+    const poleLeftBottomX = 300;
+    const poleLeftBottomY = 600;
+
+
+    let poleRightTopX = 800;
+    let poleRightTopY = 300;
+    let poleRightBottomX = 800;
+    let poleRightBottomY = 600;
+
+    let rightControllerX = poleRightTopX;
+    let rightControllerY = 350;
+    let leftControllerX = poleLeftTopX;
+    let leftControllerY = 350;
+    let ropeLength = (poleRightTopX - poleLeftTopX) * 1.3;
+
+    let ballCenterX = (poleRightTopX + poleLeftTopX)/2;
+    let ballCenterY = leftControllerY + Math.sqrt(Math.pow(ropeLength/2,2) - Math.pow((rightControllerX - leftControllerX)/2,2));
+
+
+    let rightBottomControllerX = poleRightTopX;
+    let rightBottomControllerY = 500;
+
+
+    let lastX = 0;
+    let lastY = 0;
+    let dragRightControllerPoint = false;
+    let dragRightPole = false;
+
+
+
+    function draw(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+
+        ctx.beginPath();
+        ctx.strokeStyle="#980982";
+        ctx.lineWidth = 10;
+        ctx.moveTo(poleLeftTopX,poleLeftTopY);
+        ctx.lineTo(poleLeftBottomX,poleLeftBottomY);
+        ctx.stroke();
+
+
+        ctx.beginPath();
+        ctx.strokeStyle="#980982";
+        ctx.lineWidth = 10;
+        ctx.moveTo(poleRightTopX,poleRightTopY);
+        ctx.lineTo(poleRightBottomX,poleRightBottomY);
+        ctx.stroke();
+
+
+
+        ctx.beginPath();
+        ctx.fillStyle="#972";
+        ctx.arc(leftControllerX,leftControllerY,10,0,2*Math.PI);
+        ctx.fill();
+
+
+
+        ctx.beginPath();
+        ctx.fillStyle="#977";
+        ctx.arc(rightControllerX,rightControllerY,10,0,2*Math.PI);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.fillStyle="#977";
+        ctx.arc(rightBottomControllerX,rightBottomControllerY,10,0,2*Math.PI);
+        ctx.fill();
+
+
+        ctx.beginPath();
+        ctx.strokeStyle="#108322";
+        ctx.lineWidth = 4;
+        ctx.moveTo(leftControllerX,leftControllerY);
+        ctx.lineTo(ballCenterX,ballCenterY);
+        ctx.lineTo(rightControllerX,rightControllerY);
+        ctx.stroke();
+
+
+        ctx.beginPath();
+        ctx.fillStyle="#092383";
+        ctx.arc(ballCenterX,ballCenterY,10,0,2*Math.PI);
+        ctx.fill();
+
+
+    }
+
+    canvas.addEventListener("mousedown",(e)=>{
+        const x = e.x;
+        const y = e.y;
+        if(Math.sqrt(Math.pow(x - rightControllerX,2) + Math.pow(y - rightControllerY,2)) <= 20){
+            dragRightControllerPoint = true;
+            lastX = x;
+            lastY = y;
+            return;
+        }
+
+        if(Math.sqrt(Math.pow(x - rightBottomControllerX,2) + Math.pow(y - rightBottomControllerY,2)) <= 20){
+            dragRightPole = true;
+            lastX = x;
+            lastY = y;
+        }
+    });
+
+    canvas.addEventListener("mousemove",(e)=>{
+        if(dragRightControllerPoint) {
+            const y = e.y;
+            const deltaY = y - lastY;
+            rightControllerY += deltaY;
+            lastY = y;
+        }
+        if(dragRightPole){
+            const x = e.x;
+            const deltaX = x - lastX;
+            if(rightBottomControllerX-leftControllerX + deltaX >= ropeLength){
+                rightControllerX = leftControllerX + ropeLength;
+                poleRightTopX = rightControllerX;
+                poleRightBottomX = poleRightTopX;
+                rightBottomControllerX = rightControllerX;
+            }else{
+                rightControllerX += deltaX;
+                poleRightTopX = rightControllerX;
+                poleRightBottomX = poleRightTopX;
+                rightBottomControllerX = rightControllerX;
+            }
+            lastX = x;
+        }
+
+        if(rightControllerX - ballCenterX<=0){
+            return;
+        }
+        const theta = Math.acos((rightControllerX - leftControllerX) / ropeLength);
+        const k1 = - Math.tan(theta);
+        const k2 = - Math.tan(Math.PI - theta);
+        ballCenterX = (k2 * leftControllerX  - k1 * rightControllerX  + rightControllerY - leftControllerY) / (k2 - k1);
+        ballCenterY = k2 * (ballCenterX - leftControllerX) + leftControllerY;
+
+        draw();
+
+    });
+    canvas.addEventListener("mouseup",()=>{
+        dragRightControllerPoint = false;
+        dragRightPole = false;
+    })
+
+    // draw();
+
+
+    function horner(a,x) {
+        let length = a.length;
+        //获取最高阶的系数
+        let temp  = a[0];
+        for (let i = 1; i < length; i++) {
+            temp = x * temp + a[i];
+        }
+        return temp
+    }
+
+    function stupid(a,x){
+        let length = a.length;
+        let temp = 0;
+        for (let i = 0; i < length; i++) {
+            temp += a[i] * Math.pow(x,length-1-i);
+        }
+        return temp
+    }
+
+    let a = [1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,
+        4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2,1,4,2];
+    let x = 3;
+
+    let start =  Date.now();
+    for (let i = 0; i <1000000; i++) {
+        horner(a,x);
+    }
+    console.log("horner time = ",(Date.now() - start));
+
+    start =  Date.now();
+    for (let i = 0; i <1000000; i++) {
+        stupid(a,x);
+    }
+    console.log("stupid time = ",(Date.now() - start));
+
+    // console.log( horner(a,x));
+    // console.log( stupid(a,x))
+</script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+body {
+    margin: 0;
+    height: 100vh;
+    display: grid;
+    place-items: center;
+    background: #212121;
+}
+.container {
+    display: grid;
+    place-items: center;
+    position: relative;
+}
+canvas {
+    position: absolute;
+    z-index: -1;
+}
+.moon-1 {
+    background: #eee;
+    border-radius: 100%;
+    width: 30px;
+    height: 30px;
+    offset-path: path('M0,144 C79.529004,144 144,79.529004 144,0 C144,-79.529004 79.529004,-144 0,-144 C-79.529004,-144 -144,-79.529004 -144,0 C-144,79.529004 -79.529004,144 0,144 Z');
+    position: absolute;
+    top: 145px;
+    animation: rotate 20s linear infinite;
+    left: 145px
+}
+
+.moon-2 {
+    background: #eee;
+    border-radius: 100%;
+    width: 20px;
+    height: 20px;
+    offset-path: path('M0,97 C53.5716207,97 97,53.5716207 97,0 C97,-53.5716207 53.5716207,-97 0,-97 C-53.5716207,-97 -97,-53.5716207 -97,0 C-97,53.5716207 -53.5716207,97 0,97 Z');
+    position: absolute;
+    top: 145px;
+    left: 145px;
+    animation: rotate-clockwise 10s linear infinite;
+    motion-offset: 100%;
+    offset-distance: 100%;
+}
+div[class^='moon']:after {
+    width: 50%;
+    height: 30%;
+    position: absolute;
+    background: #ccc;
+    left: 25%;
+    top: 10%;
+    content: '';
+    border-radius: 100%;
+}
+
+div[class^='moon']:before {
+    width: 20%;
+    height: 20%;
+    position: absolute;
+    background: #ccc;
+    left: 60%;
+    top: 50%;
+    content: '';
+    border-radius: 100%;
+}
+
+@keyframes rotate {
+    to {
+        motion-offset: 100%;
+        offset-distance: 100%;
+    }
+}
+
+@keyframes rotate-clockwise {
+    to {
+        motion-offset: 0%;
+        offset-distance: 0%;
+    }
+}

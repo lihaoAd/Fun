@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<div style="width: 100%;height: 100%">
+    <canvas id="canvas" width="1000" height="1000"></canvas>
+</div>
+
+<script type="application/javascript">
+    let canvas = document.getElementById("canvas");
+    let ctx = canvas.getContext("2d");
+    let gradient = ctx.createRadialGradient(500,500,150,500,500,200);
+    gradient.addColorStop(0,"#f00");
+    gradient.addColorStop(1,"#0f0");
+    ctx.fillStyle = gradient;
+    ctx.arc(500,500,200,0,2*Math.PI,true);
+    ctx.fill();
+
+
+</script>
+</body>
+</html>

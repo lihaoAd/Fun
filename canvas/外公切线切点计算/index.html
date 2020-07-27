@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>外公切线切点计算</title>
+    <style type="text/css">
+        body,html{
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<canvas  id="target"></canvas>
+<script  type="application/javascript">
+
+    let canvas =  document.getElementById("target");
+    canvas.width = document.body.clientWidth;
+    canvas.height = document.body.clientHeight;
+    let ctx = canvas.getContext("2d");
+    let isDrawing = false;
+    //大圆圆心
+    let pointC1 = {x:500,y:500};
+    //大圆半径
+    let radius1 = 250;
+
+    //小圆圆心
+    let pointC2 =  {x:800,y:300};
+    //小圆半径
+    let radius2 = 50;
+
+    let eventC1 = false;
+
+
+
+    canvas.addEventListener('mousedown', e => {
+        let x = e.offsetX;
+        let y = e.offsetY;
+        isDrawing = true;
+        if(Math.pow(x - pointC1.x,2) + Math.pow(y - pointC1.y,2) <= radius1*radius1){
+            //移动大圆
+            eventC1 = true;
+            pointC1.x = x;
+            pointC1.y = y;
+        }else{
+            pointC2.x = x;
+            pointC2.y = y;
+        }
+        update();
+    });
+
+    canvas.addEventListener('mousemove', e => {
+        if (isDrawing === true) {
+            let x = e.offsetX;
+            let y = e.offsetY;
+            if(eventC1){
+                pointC1.x = x;
+                pointC1.y = y;
+            }else{
+                pointC2.x = x;
+                pointC2.y = y;
+            }
+            update();
+        }
+    });
+
+    canvas.addEventListener('mouseup', e => {
+        if (isDrawing === true) {
+            isDrawing = false;
+            eventC1 = false;
+        }
+    });
+
+    function angle(c1,c2) {
+        return Math.atan2(c1.y - c2.y, c1.x - c2.x);
+    }
+
+    function getVector(cx, cy, a, r) {
+        return {x:cx + r * Math.cos(a), y:cy + r * Math.sin(a)};
+    }
+
+    function update() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+
+        //大圆的圆心
+        drawPoint(pointC1.x,pointC1.y,"#097734");
+        //大圆
+        drawCircle(pointC1.x,pointC1.y,radius1,"#097734");
+
+        //大圆的圆心
+        drawPoint(pointC2.x,pointC2.y,"#0a6292");
+        //大圆
+        drawCircle(pointC2.x,pointC2.y,radius2,"#0a6292");
+
+        let d = Math.sqrt(Math.pow(pointC1.x - pointC2.x,2) + Math.pow(pointC1.y - pointC2.y,2));
+        const angleBetweenCenters = angle(pointC2,pointC1);
+        const spread = Math.acos((radius1 - radius2) / d);
+        const angle1 = angleBetweenCenters + spread;
+        const angle2 = angleBetweenCenters - spread;
+        const angle3 = angleBetweenCenters + (Math.PI - (Math.PI - spread));
+        const angle4 = angleBetweenCenters - (Math.PI - (Math.PI - spread));
+        const p1 = getVector(pointC1.x,pointC1.y, angle1, radius1);
+        const p2 = getVector(pointC1.x,pointC1.y, angle2, radius1);
+        const p3 = getVector(pointC2.x,pointC2.y, angle3, radius2);
+        const p4 = getVector(pointC2.x,pointC2.y, angle4, radius2);
+
+        drawText("C1",pointC1.x,pointC1.y);
+        drawText("C2",pointC2.x,pointC2.y);
+
+        drawText("p1",p1.x,p1.y);
+        drawText("p2",p2.x,p2.y);
+        drawText("p3",p3.x,p3.y);
+        drawText("p4",p4.x,p4.y);
+
+        drawPoint(p1.x,p1.y,"#097734");
+        drawPoint(p2.x,p2.y,"#097734");
+        drawPoint(p3.x,p3.y,"#097734");
+        drawPoint(p4.x,p4.y,"#097734");
+
+        drawLine(pointC1,p1);
+        drawLine(pointC1,p2);
+        drawLine(pointC2,p3);
+        drawLine(pointC2,p4);
+        drawLine(p1,p2);
+        drawLine(p3,p4);
+
+        drawLine(p1,p3);
+        drawLine(p2,p4);
+        drawLine(pointC1,pointC2);
+    }
+
+
+    function drawText(text,x,y) {
+        ctx.beginPath();
+        ctx.font="30px Arial";
+        ctx.fillText(text,x,y);
+        ctx.stroke();
+    }
+
+    function drawCircle(x,y,radius,color){
+        ctx.beginPath();
+        ctx.fillStyle=color;
+        ctx.arc(x,y,radius,0,2*Math.PI,true);
+        ctx.stroke();
+    }
+
+    function drawPoint(x,y,color){
+        ctx.beginPath();
+        ctx.fillStyle=color;
+        ctx.arc(x,y,5,0,2*Math.PI,true);
+        ctx.fill();
+    }
+
+    function drawLine(pointStart,pointEnd) {
+        ctx.beginPath();
+        ctx.moveTo(pointStart.x,pointStart.y);
+        ctx.lineTo(pointEnd.x,pointEnd.y);
+        ctx.stroke();
+    }
+    update();
+</script>
+</body>
+</html>

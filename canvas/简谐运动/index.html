@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>无阻尼弹簧</title>
+    <style type="text/css">
+        body, html {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="target"></canvas>
+<script type="application/javascript">
+    let canvas = document.getElementById("target");
+    canvas.width = document.body.clientWidth;
+    canvas.height = document.body.clientHeight;
+    let ctx = canvas.getContext("2d");
+
+    const count = 20;
+    const isCurve = true;
+    const handleLength = 50;
+    const originLength = 600;
+    let length = originLength;
+
+    const amplitude = 200;
+    const rotate = Math.PI / 2;
+    const c = 1; //弹性系数
+
+
+    const x = canvas.width / 2;
+    const y = 0;
+
+    const rectWidth = 100;
+    const rectHeight = 100;
+
+    const mass = 20; //方块的质量
+
+    let rectCenterX = length;
+    let rectCenterY = y;
+    const k = Math.sqrt(c / mass);
+    const x0 = mass * 9.8 / c;//平衡位置
+    let frame = 0;
+
+    function draw() {
+        if (frame === 0) {
+            frame = Date.now();
+            window.requestAnimationFrame(draw.bind(this));
+            return;
+        }
+        const t = Date.now() - frame;
+
+        length = originLength + x0 + x0 * Math.cos(k * t / 100);
+        rectCenterX = length;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotate);
+        ctx.strokeStyle = '#f00';
+        ctx.lineWidth = 4;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(handleLength, 0);
+        const d = (length - 2 * handleLength) / count;
+        for (let i = 0; i < count; i++) {
+            const dir = (i & 1) === 0 ? 1 : -1;
+            if (isCurve) {
+                ctx.quadraticCurveTo(handleLength + d / 2 + d * i, amplitude * dir, handleLength + d * (i + 1), 0);
+            } else {
+                ctx.lineTo(handleLength + d * (i + 0.5), amplitude * dir);
+                ctx.lineTo(handleLength + d * (i + 1), 0);
+            }
+        }
+        ctx.lineTo(length, 0);
+        ctx.stroke();
+        drawRect(rectCenterX, rectCenterY);
+        ctx.restore();
+        window.requestAnimationFrame(draw.bind(this));
+    }
+
+    function drawRect(x, y) {
+        ctx.fillStyle = '#987234';
+        ctx.beginPath();
+        ctx.rect(x, y - rectHeight / 2, rectWidth, rectHeight);
+        ctx.fill();
+    }
+
+    window.requestAnimationFrame(draw.bind(this));
+
+
+</script>
+</body>
+</html>

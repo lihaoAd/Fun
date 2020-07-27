@@ -1,0 +1,51 @@
+body {
+    font: 100%/130% helvetica, arial, sans-serif;
+}
+
+canvas {
+    background: radial-gradient(#fff, #ccc);
+    cursor: crosshair;
+    display: block;
+    left: 0;
+    position: absolute;
+    top: 0;
+}
+
+div {
+    background: hsla(0, 0%, 100%, .5);
+    border-radius: 5px;
+    left: 20px;
+    padding: 10px 15px;
+    position: absolute;
+    top: 20px;
+    z-index: 2;
+}
+
+h1 {
+    color: #333;
+    font-size: 18px;
+    font-weight: bold;
+    position: relative;
+    text-shadow: 0 1px 0 #fff;
+    z-index: 2;
+}
+
+p {
+    color: #333;
+    font-size: 13px;
+    margin: 0 0 10px;
+    position: relative;
+    text-shadow: 0 1px 0 #fff;
+    z-index: 2;
+}
+
+label {
+    color: #333;
+    display: block;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+label span {
+    font-weight: normal;
+}

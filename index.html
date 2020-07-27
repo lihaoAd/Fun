@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title><%= htmlWebpackPlugin.options.title %></title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+    <meta charset="utf-8"/>
+    <title>Konva Drop DOM element Demo</title>
+    <style type="text/css">
+        body, html {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+
+<canvas id="target"></canvas>
+<script>
+    let canvas = document.getElementById("target");
+    canvas.width = document.body.clientWidth;
+    canvas.height = document.body.clientHeight;
+    let ctx = canvas.getContext("2d");
+
+    let cx = window.innerWidth / 2;
+    let cy = window.innerHeight / 2;
+    const r = 300;
+
+
+    let theta1 = Math.PI / 3;
+    let theta2 = 2 * Math.PI - Math.PI / 3;
+
+
+    function draw() {
+
+        let x = cx + r * Math.cos(theta2);
+        let y = cy + r * Math.sin(theta2);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = "#000";
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height / 2);
+        ctx.lineTo(canvas.width, canvas.height / 2);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(canvas.width / 2, 0);
+        ctx.lineTo(canvas.width / 2, canvas.height);
+        ctx.stroke();
+
+        ctx.strokeStyle = "#f00";
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + r * Math.cos(theta1), cy + r * Math.sin(theta1));
+        ctx.stroke();
+
+        ctx.strokeStyle = "#0f0";
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+
+
+        ctx.strokeStyle = "#00f";
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + r * Math.cos((theta1 + theta2) / 2), cy + r * Math.sin((theta1 + theta2) / 2));
+        ctx.stroke();
+
+        const lx = Math.cos(theta1);
+        const ly = Math.sin(theta1);
+        const xt = Math.cos((theta1 + theta2) / 2);
+        const yt = Math.sin((theta1 + theta2) / 2);
+
+        ctx.strokeStyle = "#0ff";
+        ctx.beginPath();
+        ctx.moveTo(cx + r * Math.cos(theta1), cy + r * Math.sin(theta1));
+        ctx.lineTo(cx + r * Math.cos((theta1 + theta2) / 2), cy + r * Math.sin((theta1 + theta2) / 2));
+        ctx.stroke();
+
+
+        if ((-lx) * (yt - ly) - (-ly) * (xt - lx) > 0) {
+            console.log("#####");
+        }
+    }
+
+    draw();
+
+    let isDraw = false;
+
+    let downX = 0;
+    let downY = 0;
+
+    canvas.addEventListener('mousedown', (e) => {
+        downX = e.x;
+        downY = e.y;
+        let x = cx + r * Math.cos(theta2);
+        let y = cy + r * Math.sin(theta2);
+        if (Math.sqrt((downX - x) * (downX - x) + (downY - y) * (downY - y)) < 20) {
+            isDraw = true;
+        }
+    });
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isDraw) {
+            return;
+        }
+        let theta = Math.atan2(e.y - cy, e.x - cx);
+        console.log((theta2 - theta).toFixed(2), theta.toFixed(2));
+        if (theta2 > Math.PI / 2 && theta < -Math.PI / 2) {
+            theta += Math.PI * 2;
+        }
+        theta2 = theta;
+        draw();
+    });
+    canvas.addEventListener('mouseup', (e) => {
+        isDraw = false;
+    });
+
+</script>
+</body>
+</html>

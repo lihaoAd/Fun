@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style type="text/css">
+        body, html {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+</head>
+<body>
+<canvas id="target"></canvas>
+<script type="application/javascript">
+    let canvas = document.getElementById("target");
+    canvas.width = document.body.clientWidth;
+    canvas.height = document.body.clientHeight;
+    let ctx = canvas.getContext("2d");
+
+    const startX = canvas.width / 2 - 300;
+    const startY = canvas.height / 2 + 100;
+    const endX = canvas.width / 2 + 300;
+    const endY = canvas.height / 2 + 100;
+    const centerX = (startX + endX) / 2;
+    const centerY = (startY + endY) / 2;
+
+    const blockWidth = 10;
+    const blockHeight = 30;
+
+    const g = 9.8;
+    var slopeX = canvas.width/4;
+    var slopeY = canvas.height/4;
+    var theta = Math.PI/3;
+
+    //圆
+    var cx = 0;
+    var cy = 0;
+    const r = 15;
+    var circleStartX = 0;
+    var circleStartY = 0;
+
+    //挡板
+    var blockX = 0;
+    var blockY = 0;
+
+    var isDown = false;
+
+    var handler = 0;
+    var isDraw = 0;
+
+
+    canvas.addEventListener('mousedown', e => {
+        let x = e.offsetX;
+        let y = e.offsetY;
+        isDown = true;
+        if(handler!==0){
+            cancelAnimationFrame(handler);
+        }
+        if (y >= centerY || x >= centerX) {
+            return;
+        }
+        isDraw = true;
+        timestamp = 0;
+        refresh(x,y)
+    });
+
+    canvas.addEventListener('mouseup', e => {
+        isDown = false;
+        if(isDraw){
+            isDraw = false;
+            handler = requestAnimationFrame(motion.bind(this));
+        }
+    });
+
+    function refresh(x,y) {
+        v = 0;
+        slopeX = x;
+        slopeY = y;
+        theta = Math.acos(-(x - centerX) / Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2)));
+        circleStartX = x + r * Math.cos(theta);
+        circleStartY = y + r * Math.sin(theta);
+        cx = circleStartX + r * Math.cos(Math.PI / 2 - theta);
+        cy = circleStartY - r * Math.sin(Math.PI / 2 - theta);
+        const blockR = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+        blockX = x + blockR * 0.8 * Math.cos(theta);
+        blockY = y + blockR * 0.8 * Math.sin(theta);
+        a = Math.sin(theta);
+        draw();
+    }
+
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.strokeStyle = "#097986";
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+        drawSlope();
+        drawCircle();
+        drawBlock();
+    }
+
+    var v = 0;
+    var a = 0;
+    var timestamp = 0;
+
+    function motion(frame) {
+        if(isDown){
+            return;
+        }
+        if (timestamp === 0) {
+            timestamp = frame;
+        }
+        const durationFrame = frame - timestamp; //每帧间隔 ms
+        timestamp = frame;
+        //当前速度
+        v += a * durationFrame / 1000 * 10;
+        const s = Math.pow(v, 2) / 2 / a;
+        let newX = circleStartX + Math.cos(theta) * s;
+        let newY = circleStartY + Math.sin(theta) * s;
+        if (Math.sqrt(Math.pow(newX - blockX, 2) + Math.pow(newY - blockY, 2)) < r + blockWidth / 2) {
+            newX = blockX - (r + blockWidth / 2) * Math.cos(theta);
+            newY = blockY - (r + blockWidth / 2) * Math.sin(theta);
+            cx = newX + r * Math.cos(Math.PI / 2 - theta);
+            cy = newY - r * Math.sin(Math.PI / 2 - theta);
+            draw();
+            return;
+        }
+        cx = newX + r * Math.cos(Math.PI / 2 - theta);
+        cy = newY - r * Math.sin(Math.PI / 2 - theta);
+        draw();
+        handler = requestAnimationFrame(motion.bind(this));
+    }
+
+
+    function drawSlope() {
+        ctx.beginPath();
+        ctx.strokeStyle = "#868422";
+        ctx.moveTo(slopeX, slopeY);
+        ctx.lineTo(centerX, centerY);
+        ctx.stroke();
+    }
+
+
+    function drawCircle() {
+        ctx.beginPath();
+        ctx.fillStyle = "#087987";
+        ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+
+
+    function drawBlock() {
+        ctx.beginPath();
+        ctx.strokeStyle = "#283";
+        const p1X = blockX - blockWidth / 2 * Math.cos(theta);
+        const p1Y = blockY - blockWidth / 2 * Math.sin(theta);
+        const p2X = blockX + blockWidth / 2 * Math.cos(theta);
+        const p2Y = blockY + blockWidth / 2 * Math.sin(theta);
+        const p3X = p2X + blockHeight * Math.cos(Math.PI / 2 - theta);
+        const p3Y = p2Y - blockHeight * Math.sin(Math.PI / 2 - theta);
+        const p4X = p1X + blockHeight * Math.cos(Math.PI / 2 - theta);
+        const p4Y = p1Y - blockHeight * Math.sin(Math.PI / 2 - theta);
+        ctx.moveTo(p1X, p1Y);
+        ctx.lineTo(p2X, p2Y);
+        ctx.lineTo(p3X, p3Y);
+        ctx.lineTo(p4X, p4Y);
+        ctx.closePath();
+        ctx.fill();
+    }
+    refresh(slopeX,slopeY);
+    requestAnimationFrame(motion.bind(this));
+
+</script>
+
+</body>
+</html>

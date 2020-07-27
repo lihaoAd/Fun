@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>帧率控制</title>
+    <style type="text/css">
+        body, html {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<canvas id="target"></canvas>
+<script>
+    let canvas = document.getElementById("target");
+    canvas.width = document.body.clientWidth;
+    canvas.height = document.body.clientHeight;
+    let ctx = canvas.getContext("2d");
+
+
+    class Time {
+
+        constructor(fps) {
+            this.timeoutId = undefined;
+            this.callBack = null;
+            this.period = 0;
+            if (fps > 0) {
+                this.period = Math.round(1000 / fps);
+            }
+            this.delta = 0;
+            this.fired_sys = NaN;
+            this.firing = false;
+            this.legacy = !(window.requestAnimationFrame);
+        }
+
+        setCallBack(callBack) {
+            this.stopFiring();
+            this.callBack = callBack;
+        }
+
+        timerCallback() {
+            if (this.callBack == null) {
+                return;
+            }
+            let now = Date.now();
+            let elapsed = now - (this.fired_sys - this.delta);
+            if (elapsed >= this.period) {
+                this.callBack();
+                this.fired_sys = now;
+                this.delta = this.period > 0 ? elapsed % this.period : 0;
+            }
+            if (this.legacy) {
+                let delay_ms = this.period > 0 ? Math.round(this.period) : 17;
+                this.timeoutId = setTimeout(this.timerCallback.bind(this), delay_ms);
+            } else {
+                this.timeoutId = window.requestAnimationFrame(this.timerCallback.bind(this))
+            }
+        }
+
+        startFiring() {
+            if (!this.firing) {
+                this.firing = true;
+                this.delta = 0;
+                this.fired_sys = Date.now()  - this.period;
+                this.timerCallback();
+            }
+        }
+
+        stopFiring() {
+            this.firing = false;
+            if (!this.timeoutId) {
+                if (this.legacy) {
+                    clearTimeout(this.timeoutId);
+                } else {
+                    cancelAnimationFrame(this.timeoutId)
+                }
+            }
+            this.fired_sys = NaN;
+            this.delta = 0;
+        }
+    }
+
+    let time = new Time(30);
+    time.setCallBack(draw);
+
+
+    class Ball {
+        constructor(cx, cy, r, color) {
+            this.cx = cx;
+            this.cy = cy;
+            this.r = r;
+            this.color = color;
+        }
+    }
+
+    function randomColor() {
+        const r = ~~(255 * Math.random());
+        const g = ~~(255 * Math.random());
+        const b = ~~(255 * Math.random());
+        return 'rgba(' + r + ',' + g + ',' + b + ',1)';
+    }
+
+    const balls = [];
+    for (let i = 0; i < 50; i++) {
+        balls.push(new Ball(canvas.width * Math.random(), canvas.height * Math.random(), 20 + 30 * Math.random(), randomColor()))
+    }
+
+    let t = 0;
+
+    function draw() {
+        if(t == 0){
+            t  =Date.now();
+        }else{
+            const  now = Date.now();
+
+            console.log(now - t );
+            t = now;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < balls.length; i++) {
+            const ball = balls[i];
+            ball.cx += -1 + Math.random() * 2;
+            ball.cy += -1 + Math.random() * 2;
+            ctx.beginPath();
+            ctx.fillStyle = ball.color;
+            ctx.arc(ball.cx, ball.cy, ball.r, 0, 2 * Math.PI);
+            ctx.fill()
+        }
+    }
+    time.startFiring();
+</script>
+</body>
+</html>

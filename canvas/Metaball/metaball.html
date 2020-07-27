@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style type="text/css">
+        body, html {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<canvas style="width: 100%;height: 100%" id="meta-ball"></canvas>
+<script type="application/javascript">
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    let canvas = document.getElementById("meta-ball");
+    canvas.width = document.body.clientWidth * devicePixelRatio;
+    canvas.height = document.body.clientHeight * devicePixelRatio;
+    let ctx = canvas.getContext("2d");
+    const HALF_PI = Math.PI / 2;
+
+    class Circle {
+
+        constructor(cx, cy, radius, color) {
+            this.cx = cx;
+            this.cy = cy;
+            this.radius = radius;
+            this.color = color;
+            this.dragging = false;
+        }
+
+        draw(ctx) {
+            // ctx.fillStyle = this.color;
+            // ctx.beginPath();
+            // ctx.arc(this.cx, this.cy, this.radius, 0, 2 * Math.PI);
+            // ctx.fill();
+
+            ctx.strokeStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.cx, this.cy, this.radius, 0, 2 * Math.PI);
+            ctx.stroke();
+
+        }
+
+        move(x, y) {
+            if (this.dragging) {
+                this.cx = x;
+                this.cy = y;
+            }
+        }
+    }
+
+    const c1 = new Circle(canvas.width * 0.4, canvas.height * 0.4, Math.min(canvas.width, canvas.height) * 0.2, '#432322');
+    const c2 = new Circle(canvas.width * 0.7, canvas.height * 0.5, Math.min(canvas.width, canvas.height) * 0.1, '#432322');
+
+    let isDrawing = false;
+
+    canvas.addEventListener('mousedown', e => {
+        isDrawing = true;
+        let x = e.offsetX * devicePixelRatio;
+        let y = e.offsetY * devicePixelRatio;
+        if (Math.sqrt(Math.pow(x - c1.cx, 2) + Math.pow(y - c1.cy, 2)) <= c1.radius) {
+            c1.dragging = true;
+            c2.dragging = false;
+        }
+
+        if (Math.sqrt(Math.pow(x - c2.cx, 2) + Math.pow(y - c2.cy, 2)) <= c2.radius) {
+            c1.dragging = false;
+            c2.dragging = true;
+        }
+    });
+
+    canvas.addEventListener('mousemove', e => {
+        let x = e.offsetX * devicePixelRatio;
+        let y = e.offsetY * devicePixelRatio;
+        if (!isDrawing) {
+            return
+        }
+        update(x, y);
+    });
+    canvas.addEventListener('mouseup', e => {
+        isDrawing = false;
+        c1.dragging = false;
+        c2.dragging = false;
+    });
+
+    function update(x, y) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        c1.move(x, y);
+        c2.move(x, y);
+        c1.draw(ctx);
+        c2.draw(ctx);
+
+        const maxDist = c1.radius + c2.radius * 3.9;
+        const distanceBetweenCenter = Math.sqrt(Math.pow(c1.cx - c2.cx, 2) + Math.pow(c1.cy - c2.cy, 2));
+        if (distanceBetweenCenter >= maxDist || distanceBetweenCenter <= Math.abs(c1.radius - c2.radius)) {
+            return;
+        }
+        const totalRadius = c1.radius + c2.radius;
+        const v = 0.5;
+        let u1 = 0;
+        let u2 = 0;
+        if (distanceBetweenCenter < totalRadius) {
+            //余弦定理
+            u1 = Math.acos((c1.radius * c1.radius + distanceBetweenCenter * distanceBetweenCenter - c2.radius * c2.radius) / (2 * c1.radius * distanceBetweenCenter));
+            u2 = Math.acos((c2.radius * c2.radius + distanceBetweenCenter * distanceBetweenCenter - c1.radius * c1.radius) / (2 * c2.radius * distanceBetweenCenter));
+        } else {
+            u1 = 0;
+            u2 = 0;
+        }
+        const angleBetweenCenters = Math.atan2(c2.cy - c1.cy, c2.cx - c1.cx);
+
+
+        const spread = Math.acos((c1.radius - c2.radius) / distanceBetweenCenter);
+
+        const angle1 = angleBetweenCenters + u1 + (spread - u1) * v;
+        const angle2 = angleBetweenCenters - (u1 + (spread - u1) * v);
+        const angle3 = angleBetweenCenters + Math.PI - u2 - (Math.PI - u2 - spread) * v;
+        const angle4 = angleBetweenCenters - (Math.PI - u2 - (Math.PI - u2 - spread) * v);
+
+
+        const p1 = getVector(c1.cx, c1.cy, angle1, c1.radius);
+        const p2 = getVector(c1.cx, c1.cy, angle2, c1.radius);
+        const p3 = getVector(c2.cx, c2.cy, angle3, c2.radius);
+        const p4 = getVector(c2.cx, c2.cy, angle4, c2.radius);
+
+        // drawLine(p1.x, p1.y, p3.x, p3.y, "#761242");
+        // drawLine(p2.x, p2.y, p4.x, p4.y, "#761242");
+        drawCircle(p1.x, p1.y, 4 * devicePixelRatio, '#415332');
+        drawCircle(p2.x, p2.y, 4 * devicePixelRatio, '#415332');
+        drawCircle(p3.x, p3.y, 4 * devicePixelRatio, '#415332');
+        drawCircle(p4.x, p4.y, 4 * devicePixelRatio, '#415332');
+        drawText("angle1", p1.x, p1.y);
+        drawText("angle2", p2.x, p2.y);
+        drawText("angle3", p3.x, p3.y);
+        drawText("angle4", p4.x, p4.y);
+
+
+        const d2Base = (dist(p1.x, p1.y, p3.x, p3.y) / totalRadius);
+        const d2 = d2Base * Math.min(1, (distanceBetweenCenter << 1) / totalRadius);
+        const r1 = c1.radius * d2;
+        const r2 = c2.radius * d2;
+        const h1 = this.getVector(p1.x, p1.y, angle1 - HALF_PI, r1);
+        const h2 = this.getVector(p2.x, p2.y, angle2 + HALF_PI, r1);
+        const h3 = this.getVector(p3.x, p3.y, angle3 + HALF_PI, r2);
+        const h4 = this.getVector(p4.x, p4.y, angle4 - HALF_PI, r2);
+
+        // ctx.beginPath();
+        // ctx.fillStyle = c2.color;
+        // ctx.moveTo(p1.x, p1.y);
+        // ctx.arc(c1.cx, c1.cy, c1.radius, angle1, angle2, false);
+        // ctx.bezierCurveTo(h2.x, h2.y, h4.x, h4.y, p4.x, p4.y);
+        // ctx.arc(c2.cx, c2.cy, c2.radius, angle4, angle3, false);
+        // ctx.bezierCurveTo(h3.x, h3.y, h1.x, h1.y, p1.x, p1.y);
+        // ctx.fill();
+
+
+        ctx.beginPath();
+        ctx.strokeStyle = c2.color;
+        ctx.moveTo(p1.x, p1.y);
+        ctx.arc(c1.cx, c1.cy, c1.radius, angle1, angle2, false);
+        ctx.bezierCurveTo(h2.x, h2.y, h4.x, h4.y, p4.x, p4.y);
+        ctx.arc(c2.cx, c2.cy, c2.radius, angle4, angle3, false);
+        ctx.bezierCurveTo(h3.x, h3.y, h1.x, h1.y, p1.x, p1.y);
+        ctx.stroke();
+
+
+        drawLine(p1.x, p1.y, h1.x, h1.y, "#7ee987");
+        drawLine(p2.x, p2.y, h2.x, h2.y, "#7ee987");
+        drawLine(p3.x, p3.y, h3.x, h3.y, "#7ee987");
+        drawLine(p4.x, p4.y, h4.x, h4.y, "#7ee987");
+
+        drawCircle(h1.x, h1.y, 4 * devicePixelRatio, '#a24444');
+        drawCircle(h2.x, h2.y, 4 * devicePixelRatio, '#a24444');
+        drawCircle(h3.x, h3.y, 4 * devicePixelRatio, '#a24444');
+        drawCircle(h4.x, h4.y, 4 * devicePixelRatio, '#a24444');
+        drawText("h1", h1.x, h1.y);
+        drawText("h2", h2.x, h2.y);
+        drawText("h3", h3.x, h3.y);
+        drawText("h4", h4.x, h4.y);
+
+    }
+
+    function getVector(cx, cy, a, r) {
+        return {x: cx + r * Math.cos(a), y: cy + r * Math.sin(a)};
+    }
+
+    function dist(x1, y1, x2, y2) {
+        return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+    }
+
+
+    function drawLine(x1, y1, x2, y2, color) {
+        ctx.strokeStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke()
+    }
+
+    function drawCircle(x, y, r, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, 2 * Math.PI);
+        ctx.fill()
+    }
+
+
+    function drawText(text, x, y) {
+        ctx.beginPath();
+        ctx.fillText(text, x, y);
+        ctx.fill()
+    }
+
+
+    update(0, 0);
+
+</script>
+
+</body>
+</html>

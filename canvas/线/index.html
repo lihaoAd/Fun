@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style type="text/css">
+        body, html {
+            width: 100%;
+            height: 100%;
+        }
+
+
+    </style>
+</head>
+<body>
+<canvas style="width: 100%;height: 100%" id="meta-ball"></canvas>
+<script type="application/javascript">
+
+    let canvas = document.getElementById("meta-ball");
+    canvas.width = document.body.clientWidth * window.devicePixelRatio;
+    canvas.height = document.body.clientHeight* window.devicePixelRatio;
+    let ctx = canvas.getContext("2d");
+    canvas.addEventListener("mousedown", (event) => {
+        c1 = {x: event.x* window.devicePixelRatio, y: event.y* window.devicePixelRatio, color: "#239832", r: 40};
+        draw();
+    });
+
+
+    let c1 = {x: 300, y: 300, color: "#239832", r: 40};
+    let c2 = {x: 600, y: 600, color: "#982374", r: 40};
+    let c3 = {x: 800, y: 600, color: "#98a786", r: 40};
+    let c4 = {x: 100, y: 600, color: "#a97231", r: 40};
+    let c5 = {x: 200, y: 600, color: "#e21233", r: 40};
+    let c6 = {x: 400, y: 600, color: "#090052", r: 40};
+
+    draw();
+
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawCircle(c1);
+        drawCircle(c2);
+        drawCircle(c3);
+        drawCircle(c4);
+        drawCircle(c5);
+        drawCircle(c6);
+        drawCureLine(c1,c2);
+        drawCureLine(c1,c3);
+        drawCureLine(c1,c4);
+        drawCureLine(c1,c5);
+        drawCureLine(c1,c6);
+
+        // drawCureLine(c2,c3);
+    }
+
+    /**
+     *
+     * 从c1到c2画一条曲线
+     * */
+    function drawCureLine(c1, c2) {
+        const arrowRadius = 40;
+        const arrowAngle = Math.PI / 8;
+
+        const f = 4;
+        let s = null;
+        let e = null;
+        let arrow = null;
+        let p1X = 0;
+        let p1Y = 0;
+        let p2X = 0;
+        let p2Y = 0;
+
+        let arrowUp = true;
+
+        if((c1.y - c1.r)  - (c2.y  - c2.r) >= c2.r * 2 + c2.r * 2 ){
+            s = {x: c1.x, y: c1.y - c1.r};
+            e = {x: c2.x, y: c2.y + c2.r + Math.cos(arrowAngle) * arrowRadius/2 };
+            arrow = {x: c2.x, y: c2.y + c2.r };
+            p1X = s.x;
+            p1Y = (s.y + e.y) / 2 - (s.y - e.y) / f;
+            p2X = e.x;
+            p2Y = (s.y + e.y) / 2 + (s.y - e.y) / f;
+            arrowUp = true;
+        }else if( (c1.y - c1.r) -(c2.y  - c2.r) <  - c2.r * 2 ){
+            s = {x: c1.x, y: c1.y + c1.r};
+            e = {x: c2.x, y: c2.y - c2.r -  Math.cos(arrowAngle) * arrowRadius/2};
+            arrow = {x: c2.x, y: c2.y - c2.r};
+            p1X = s.x;
+            p1Y = (s.y + e.y) / 2 + Math.abs(s.y - e.y) / f;
+            p2X = e.x;
+            p2Y = (s.y + e.y) / 2 -  Math.abs(s.y - e.y) / f;
+            arrowUp = false;
+        }else{
+            s = {x: c1.x, y: c1.y - c1.r};
+            e = {x: c2.x, y: c2.y - c2.r - Math.cos(arrowAngle) * arrowRadius/2};
+            arrow = {x: c2.x, y: c2.y - c2.r};
+            p1X = s.x;
+            p1Y = s.y - c1.r*5;
+            p2X = e.x;
+            p2Y = e.y - c2.r*5;
+            arrowUp = false;
+        }
+
+        //线条
+        ctx.beginPath();
+        ctx.moveTo(s.x, s.y);
+        ctx.strokeStyle = "#986117";
+        ctx.lineWidth = 10;
+        ctx.bezierCurveTo(p1X, p1Y, p2X, p2Y, e.x, e.y); //三次贝塞尔曲线
+        ctx.stroke();
+
+        //箭头
+        ctx.beginPath();
+        ctx.fillStyle = "#287630";
+        if(arrowUp){
+            ctx.moveTo(arrow.x - arrowRadius * Math.sin(arrowAngle), arrow.y + arrowRadius * Math.cos(arrowAngle));
+        }else{
+            ctx.moveTo(arrow.x - arrowRadius * Math.sin(arrowAngle), arrow.y - arrowRadius * Math.cos(arrowAngle));
+        }
+        ctx.lineTo(arrow.x, arrow.y);
+        if(arrowUp){
+            ctx.lineTo(arrow.x + arrowRadius * Math.sin(arrowAngle), arrow.y + arrowRadius * Math.cos(arrowAngle));
+        }else{
+            ctx.lineTo(arrow.x + arrowRadius * Math.sin(arrowAngle), arrow.y - arrowRadius * Math.cos(arrowAngle));
+        }
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    function drawCircle(circle) {
+        ctx.beginPath();
+        ctx.fillStyle = circle.color;
+        ctx.arc(circle.x, circle.y, circle.r, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+
+
+</script>
+</body>
+</html>

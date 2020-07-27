@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style type="text/css">
+        body, html {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<canvas id="target"></canvas>
+<script>
+    let canvas = document.getElementById("target");
+    canvas.width = document.body.clientWidth;
+    canvas.height = document.body.clientHeight;
+    let ctx = canvas.getContext("2d");
+
+
+    let tLow = -3;
+    let tHigh = 3;
+    let tableLength = 500;
+
+    function x_func(t) {
+        return t;
+    }
+
+    function y_func(t) {
+        return 3 + t * t * (-7 + t * t) / 6 + Math.cos(t);
+    }
+
+    class PathPoint {
+        constructor() {
+            this.x = 0;
+            this.y = 0;
+            this.p = p || 0;
+            this.slope = NaN;
+            this.radius = NaN;
+            this.radius_flag = true;
+            this.direction = 1;
+            this.idx = -1;
+            this.normalX = 0;
+            this.normalY = 0;
+            this.normalXdp = 0;
+            this.normalYdp = 0;
+            this.slopeX = 0;
+            this.slopeY = 0;
+            this.dxdp = 0;
+            this.dydp = 0;
+        }
+
+    }
+
+    let translateX = canvas.width / 2;
+
+
+    let pvals = [];
+    let xvals = [];
+    let yvals = [];
+    let dxvals = [];
+    let dyvals = [];
+    let nxvals = [];
+    let nyvals = [];
+
+    let nxpVals = [];
+    let nypVals = [];
+    let p = 0;
+    let point = new PathPoint();
+    let plen = 0;
+
+    function deriv3(yy, k, type) {
+        var x0 = pvals[k];
+        var x1 = pvals[k + 1];
+        var x2 = pvals[k + 2];
+        var xj;
+        switch (type) {
+            case 0:
+                xj = x0;
+                break;
+            case 1:
+                xj = x1;
+                break;
+            case 2:
+                xj = x2;
+                break;
+            default:
+                throw new Error();
+        }
+        let r = yy[k] * (2 * xj - x1 - x2) / ((x0 - x1) * (x0 - x2));
+        r += yy[k + 1] * (2 * xj - x0 - x2) / ((x1 - x0) * (x1 - x2));
+        r += yy[k + 2] * (2 * xj - x0 - x1) / ((x2 - x0) * (x2 - x1));
+        return r;
+    }
+
+
+    let scale = 150;
+
+    this.makeTable();
+
+
+    point.x = translateX + (xvals[0]) * scale;
+    point.y = (yvals[0]) * scale;
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.strokeStyle = "#654654";
+        ctx.save();
+        ctx.translate(translateX, 0);
+        ctx.moveTo(xvals[0] * scale, yvals[0] * scale);
+        for (let i = 1; i < tableLength; i++) {
+            ctx.lineTo(xvals[i] * scale, yvals[i] * scale);
+        }
+        ctx.stroke();
+
+        for (let i = 0; i < tableLength; i += 1) {
+            ctx.beginPath();
+            ctx.moveTo(xvals[i] * scale, yvals[i] * scale);
+            ctx.lineTo(xvals[i] * scale + dxvals[i] * scale, yvals[i] * scale + dyvals[i] * scale);
+            ctx.stroke();
+        }
+
+        ctx.strokeStyle = "#a87622";
+        for (let i = 0; i < tableLength; i += 1) {
+            ctx.beginPath();
+            ctx.moveTo(xvals[i] * scale, yvals[i] * scale);
+            ctx.lineTo(xvals[i] * scale + nxvals[i] * 100, yvals[i] * scale + nyvals[i] * 100);
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        map_p_to_slope(point);
+        point.x = point.x * scale + translateX;
+        point.y = point.y * scale;
+
+        ctx.beginPath();
+        ctx.strokeStyle = "#aee";
+        ctx.moveTo(point.x, point.y);
+        ctx.lineTo(point.x + point.slopeX * scale, point.y + point.slopeY * scale);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.strokeStyle = "#00ee00";
+        ctx.moveTo(point.x, point.y);
+        ctx.lineTo(point.x + point.normalX * scale, point.y + point.normalY * scale);
+        ctx.stroke();
+
+
+        console.log(point.radius);
+
+        ctx.beginPath();
+        ctx.fillStyle = "#aae332";
+        ctx.arc(point.x, point.y, 20, 0, Math.PI * 2);
+        ctx.fill();
+
+    }
+
+    let isDraw = false;
+
+    canvas.addEventListener('mousedown', (e) => {
+        let downX = e.x;
+        let downY = e.y;
+        if (Math.sqrt((downX - point.x) * (downX - point.x) + (downY - point.y) * (downY - point.y)) < 20) {
+            let index = findIndex(downX);
+            point.p = pvals[index];
+            point.idx = index;
+            isDraw = true;
+        }
+        draw();
+    });
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isDraw) {
+            return;
+        }
+        let downX = e.x;
+        let index = findIndex(downX);
+        point.p = pvals[index];
+        point.idx = index;
+        draw();
+    });
+    canvas.addEventListener('mouseup', (e) => {
+        isDraw = false;
+    });
+
+
+    draw();
+
+    function makeTable() {
+        let delta = (tHigh - tLow) / (tableLength - 1);
+        let t = tLow;
+        pvals[0] = 0;
+        let x1, x2, y1, y2;
+        x1 = x_func(t);
+        x2 = x1;
+        xvals[0] = x1;
+        y1 = y_func(t);
+        y2 = y1;
+        yvals[0] = y1;
+
+
+        for (let i = 1; i < tableLength; i++) {
+            t += delta;
+            xvals[i] = x_func(t);
+            yvals[i] = y_func(t);
+            let dx = xvals[i] - xvals[i - 1];
+            let dy = yvals[i] - yvals[i - 1];
+
+            p += Math.sqrt(dx * dx + dy * dy);
+
+            pvals[i] = p;
+            if (xvals[i] < x1) {
+                x1 = xvals[i];
+            }
+
+            if (xvals[i] > x2) {
+                x2 = xvals[i];
+            }
+
+            if (yvals[i] < y1) {
+                y1 = yvals[i];
+            }
+
+            if (yvals[i] > y2) {
+                y2 = yvals[i];
+            }
+        }
+
+        plen = plen[tableLength - 1] - pvals[0];
+
+
+        for (let i = 0; i < tableLength; i++) {
+
+            if (i === 0) {
+                dxvals[0] = deriv3(xvals, 0, 0);
+                dyvals[0] = deriv3(yvals, 0, 0);
+            } else if (i === tableLength - 1) {
+                dxvals[i] = deriv3(xvals, i - 2, 2);
+                dyvals[i] = deriv3(yvals, i - 2, 2);
+            } else {
+                dxvals[i] = deriv3(xvals, i - 1, 1);
+                dyvals[i] = deriv3(yvals, i - 1, 1);
+            }
+
+            if (Math.abs(dyvals[i]) < 1E-16) {
+                nxvals[i] = dyvals[i] < 0 ? 1.0 : -1.0;
+                nyvals[i] = 0.0;
+            } else if (Math.abs(dyvals[i]) < 1E-16) {
+                nxvals[i] = 0.0;
+                nyvals[i] = dxvals[i] > 0 ? 1.0 : -1.0;
+            } else {
+                let q = -dxvals[i] / dyvals[i];
+                let q2 = Math.sqrt(1 + q * q);
+
+                nxvals[i] = 1.0 / q2;
+                nyvals[i] = q / q2;
+                let direction = dxvals[i] > 0 ? 1 : -1;
+                if (direction * q < 0) {
+                    nxvals[i] = -nxvals[i];
+                    nyvals[i] = -nyvals[i];
+                }
+            }
+
+        }
+        for (i = 0; i < tableLength; i++) {
+            if (i === 0) {
+                nxpVals[0] = deriv3(nxvals, 0, 0);
+                nypVals[0] = deriv3(nyvals, 0, 0);
+            } else if (i === tableLength - 1) {
+                nxpVals[i] = deriv3(nxvals, i - 2, 2);
+                nypVals[i] = deriv3(nyvals, i - 2, 2);
+            } else {
+                nxpVals[i] = deriv3(nxvals, i - 1, 1);
+                nypVals[i] = deriv3(nyvals, i - 1, 1);
+            }
+        }
+    }
+
+
+    function findIndex(screenX) {
+        let x = (screenX - translateX) / scale;
+        for (let i = 0; i < tableLength; i++) {
+            if (xvals[i] > x) {
+                if (i === 0) {
+                    return i;
+                }
+                return i - 1;
+            }
+        }
+        return tableLength - 1;
+    }
+
+    function map_p_to_slope(ppt) {
+        var nowP = ppt.p;
+        // If `PathPoint.idx` corresponds to `PathPoint.p`, then can avoid searching
+        // for index of `p` in the table.
+        var k = ppt.idx;
+        if (k < 0 || k > tableLength - 2 || pvals[k] > nowP ||
+            pvals[k + 1] <= nowP) {
+            ppt.idx = k = binarySearch(pvals, nowP);
+        }
+        if (k < 0)
+            k = 0;
+        if (k >= tableLength - 1)
+            k = tableLength - 2;
+
+        //     var m;
+        //     if (nowP < -3) {
+        //         // nowP is before the starting point of path. Use straight-line extension.
+        //         ppt.copyFrom(this.startPoint_);
+        //         ppt.p = nowP;
+        //         ppt.idx = k;
+        //         m = ppt.slope;
+        //         ppt.x = this.startPoint_.x + (nowP - this.getStartPValue()) / Math.sqrt(1 + m * m);
+        //         ppt.y = this.startPoint_.y + m * (ppt.x - this.startPoint_.x);
+        //         return;
+        //     } else if (nowP > this.getFinishPValue()) {
+        //         // nowP is after the ending point of path. Use straight-line extension.
+        //         ppt.copyFrom(this.endPoint_);
+        //         ppt.p = nowP;
+        //         ppt.idx = k;
+        //         m = ppt.slope;
+        //         ppt.x = this.endPoint_.x + (nowP - this.getFinishPValue()) / Math.sqrt(1 + m * m);
+        //         ppt.y = this.endPoint_.y + m * (ppt.x - this.endPoint_.x);
+        //         return;
+        //     }
+        // }
+
+        //多项式插值计算x y的位置
+        ppt.x = interp4(pvals, xvals, nowP, k - 1);
+        ppt.y = interp4(pvals, yvals, nowP, k - 1);
+
+        //多项式插值计算x y的位置
+        ppt.dydp = interp4(pvals, dyvals, nowP, k - 1);
+        ppt.dxdp = interp4(pvals, dxvals, nowP, k - 1);
+
+        if (Math.abs(ppt.dxdp) < 1E-12) {
+            // vertical line is special case
+            ppt.dxdp = 0;
+            // WARNING: not sure about this calculation of ppt.direction; might depend on the
+            // particulars of the path.
+            if (ppt.dydp > 0) {
+                // going up with increasing p
+                ppt.direction = 1;
+                ppt.slope = ppt.radius = Number.POSITIVE_INFINITY;
+                ppt.slopeX = 0;
+                ppt.slopeY = 1;
+                ppt.normalX = -1;
+                ppt.normalY = 0;
+            } else {
+                // going down with increasing p
+                ppt.direction = -1;
+                ppt.slope = ppt.radius = Number.NEGATIVE_INFINITY;
+                ppt.slopeX = 0;
+                ppt.slopeY = -1;
+                ppt.normalX = 1;
+                ppt.normalY = 0;
+            }
+        } else {
+            //向着时间增加的方向为1
+            // figure out direction of path:  left to right = +1, right to left = -1
+            ppt.direction = ppt.dxdp > 0 ? 1 : -1;
+            //导数
+            ppt.slope = ppt.dydp / ppt.dxdp;
+            // Find slope vector (slopeX, slopeY)
+            // the slope vector must point in direction of increasing p
+            //矢量模长
+            var s2 = Math.sqrt(1 + ppt.slope * ppt.slope);
+            //x关于p的导数
+            ppt.slopeX = 1.0 / s2;
+            //y关于p的导数
+            ppt.slopeY = ppt.slope / s2;
+            //向左运动
+            if (ppt.direction === -1) {
+                ppt.slopeX = -ppt.slopeX;
+                ppt.slopeY = -ppt.slopeY;
+            }
+
+
+            if (Math.abs(ppt.slope) > 1E-12) {
+                // Find normal vector (normalX, normalY)
+                // the normal vector should not suddenly flip from positive to negative,
+                // therefore it has a different policy for when to flip it around.
+                //法向量
+                var ns = -1 / ppt.slope;  // slope of normal
+                // 标准化
+                var ns2 = Math.sqrt(1 + ns * ns);
+
+                ppt.normalX = 1.0 / ns2;
+                ppt.normalY = ns / ns2;
+                if (ppt.direction * ppt.slope > 0) {
+                    ppt.normalX = -ppt.normalX;
+                    ppt.normalY = -ppt.normalY;
+                }
+            } else {
+                // horizontal line.
+                ppt.normalX = 0;
+                ppt.normalY = ppt.direction > 0 ? 1 : -1;
+            }
+        }
+        ppt.normalXdp = interp4(pvals, nxpVals, nowP, k - 1);
+        ppt.normalYdp = interp4(pvals, nypVals, nowP, k - 1);
+
+
+        if (ppt.radius_flag) {
+            // assume straight-line (infinite radius) at end-points of path
+            // ??? or calculate the radius at the end-points???
+            if ((k < 2) || (k > tableLength - 4)) {
+                ppt.radius = Number.POSITIVE_INFINITY;
+            } else {
+                var dx = xvals[k] - xvals[k - 2];
+                var dy = yvals[k] - yvals[k - 2];
+                var b1 = dy / dx;
+                var p1 = pvals[k - 1];
+                dx = xvals[k + 3] - xvals[k + 1];
+                dy = yvals[k + 3] - yvals[k + 1];
+                var b2 = dy / dx;
+                var p2 = pvals[k + 2];
+                ppt.radius = (p2 - p1) / (Math.atan(b2) - Math.atan(b1));
+                // cludge for straight lines, vertical lines, etc.
+                if (isNaN(ppt.radius) || !isFinite(ppt.slope)) {
+                    ppt.radius = ppt.slope > 0 ? Number.POSITIVE_INFINITY :
+                        Number.NEGATIVE_INFINITY;
+                }
+            }
+        }
+    }
+
+
+    function interp4(xx, yy, x, k) {
+        var n = xx.length;
+        if (yy.length !== n)
+            throw new Error();
+        var i = k;
+        // check if at either end point of the table, fix index if needed.
+        if (i > n - 4) {
+            // use xx[n-4], xx[n-3], xx[n-2], xx[n-1]
+            i = n - 4;
+        } else if (i < 0) {
+            i = 0;
+        }
+        // Use Horner's rule for nested multiplication to evaluate the polynomial at x.
+        //  see Van Loan, p. 80
+        // calculate the constants on the polynomial
+        var c1, c2, c3, c4;
+        c1 = yy[i + 0];
+        c2 = (yy[i + 1] - c1) / (xx[i + 1] - xx[i + 0]);
+        c3 = (yy[i + 2] - (c1 + c2 * (xx[i + 2] - xx[i + 0]))) / ((xx[i + 2] - xx[i + 0]) * (xx[i + 2] - xx[i + 1]));
+        c4 = yy[i + 3] - (c1 + c2 * (xx[i + 3] - xx[i + 0]) + c3 * (xx[i + 3] - xx[i + 0]) * (xx[i + 3] - xx[i + 1]));
+        c4 = c4 / ((xx[i + 3] - xx[i + 0]) * (xx[i + 3] - xx[i + 1]) * (xx[i + 3] - xx[i + 2]));
+        var r = ((c4 * (x - xx[i + 2]) + c3) * (x - xx[i + 1]) + c2) * (x - xx[i + 0]) + c1;
+        return r;
+    }
+
+    function binarySearch(arr, x) {
+        var i_int, min, max;
+        var n_int = arr.length;
+        if (n_int < 2)
+            throw new Error('array must have more than one element');
+        var dir = arr[0] < arr[n_int - 1];  // sort direction of array
+        i_int = Math.floor(n_int / 2);
+        if (dir) {
+            min = 0;
+            max = n_int - 1;
+        } else {
+            min = n_int - 1;
+            max = 0;
+        }
+        // deal with x being outside array first
+        if (dir) {
+            if (x < arr[0])
+                return -1;
+            if (x >= arr[n_int - 1])
+                return n_int;
+        } else {
+            if (x < arr[n_int - 1])
+                return n_int;
+            if (x >= arr[0])
+                return -1;
+        }
+        while (Math.abs(max - min) > 1) {
+            if (arr[i_int] <= x) {
+                if (dir)
+                    min = i_int;
+                else
+                    max = i_int;
+            } else {
+                if (dir)
+                    max = i_int;
+                else
+                    min = i_int;
+            }
+            if (dir)
+                i_int = min + Math.floor((max - min) / 2);
+            else
+                i_int = max + Math.floor((min - max) / 2);
+        }
+        return i_int;
+
+    }
+
+    function advance() {
+
+         draw();
+    }
+
+    function tick() {
+
+
+
+        window.requestAnimationFrame(tick.bind(this));
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title><%= htmlWebpackPlugin.options.title %></title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+    <meta charset="utf-8"/>
+    <title>Konva Drop DOM element Demo</title>
+    <style type="text/css">
+        body, html {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+
+<canvas id="target"></canvas>
+<script>
+    let canvas = document.getElementById("target");
+    canvas.width = document.body.clientWidth;
+    canvas.height = document.body.clientHeight;
+    let ctx = canvas.getContext("2d");
+
+    class Point {
+
+        constructor(x, y, color, name) {
+            this.x = x;
+            this.y = y;
+            this.color = color;
+            this.name = name;
+        }
+    }
+
+    const ball = new Point(canvas.width / 2, 50, '#099788', 'BALL');
+
+
+    const pa = new Point(canvas.width / 4, canvas.height / 2, '#767f56', 'A');
+    const pb = new Point(canvas.width - canvas.width / 4, canvas.height / 4, '#767f56', 'B');
+
+
+
+
+
+    const p1 = new Point(126, 329.644, '#099788', 'A');
+    const p2 = new Point(310.53461962984244, 565.5799628783509, '#877666', 'B');
+    const p3 = new Point(124.2888634646254, 321.360599851835, '#767f56', 'D');
+    const p4 = new Point(130.58720715432287, 341.25365659253004, '#752422', 'C');
+
+
+    function drawCircle(x, y, color, name) {
+        ctx.beginPath();
+        ctx.fillStyle = color;
+        ctx.arc(x, y, 10, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.font = '20px Apr';
+        ctx.fillText(name, x, y);
+        ctx.fill();
+
+    }
+
+
+    function drawText(x, y, text) {
+        ctx.beginPath();
+        ctx.font = '20px Apr';
+        ctx.fillText(text, x, y);
+        ctx.fill();
+    }
+
+
+    function drawLine(x1, y1, x2, y2) {
+        ctx.beginPath();
+        ctx.strokeStyle = '#123344';
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+    }
+
+    window.requestAnimationFrame(draw.bind(this));
+
+
+    let timestamp = 0;
+    let lastX = undefined;
+    let lastY = undefined;
+
+    let stop = false;
+
+    function draw() {
+        if (stop) {
+            return;
+        }
+        timestamp += 0.1;
+
+        ball.y = 50 + 0.5 * 9.8 * timestamp * timestamp;
+
+        drawCircle(ball.x, ball.y, ball.color, ball.name);
+        drawCircle(pa.x, pa.y, pa.color, pa.name);
+        drawCircle(pb.x, pb.y, pb.color, pb.name);
+
+        drawLine(pa.x, pa.y, pb.x, pb.y);
+
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawCircle(p1.x, p1.y, p1.color, p1.name);
+        drawCircle(p2.x, p2.y, p2.color, p2.name);
+        drawCircle(p3.x, p3.y, p3.color, p3.name);
+        drawCircle(p4.x, p4.y, p4.color, p4.name);
+
+        drawLine(p1.x, p1.y, p4.x, p4.y);
+        drawLine(p2.x, p2.y, p3.x, p3.y);
+
+
+        const p = finCrossPoint(p1.x, p1.y, p4.x, p4.y, p2.x, p2.y, p3.x, p3.y);
+        drawCircle(p.x, p.y, p.color, p.name);
+
+        if (lastX === undefined || lastY === undefined) {
+            lastX = ball.x;
+            lastY = ball.y;
+        } else {
+            const p = finCrossPoint(lastX, lastY, ball.x, ball.y, pa.x, pa.y, pb.x, pb.y);
+            lastX = ball.x;
+            lastY = ball.y;
+            if (p) {
+                stop = true;
+                drawCircle(p.x, p.y, p.color, p.name);
+                return;
+            }
+        }
+        window.requestAnimationFrame(draw.bind(this));
+    }
+
+    function finCrossPoint(x1, y1, x2, y2, x3, y3, x4, y4) {
+        let k1 = 0;
+        let b1 = 0;
+        let k2 = 0;
+        let b2 = 0;
+        if (Math.abs(x2 - x1) < 1E-15) {
+            //垂直线
+            k1 = Number.POSITIVE_INFINITY;
+            b1 = y1;
+        } else if (Math.abs(y2 - y1) < 1E-15) {
+            //水平线
+            k1 = 0;
+            b1 = x1;
+        } else {
+            k1 = (y1 - y2) / (x1 - x2);
+            b1 = y1 - k1 * x1;
+        }
+
+        if (Math.abs(x4 - x3) < 1E-15) {
+            //垂直线
+            k2 = Number.POSITIVE_INFINITY;
+            b2 = y3;
+        } else if (Math.abs(y4 - y3) < 1E-15) {
+            //水平线
+            k2 = 0;
+            b2 = x3;
+        } else {
+            k2 = (y4 - y3) / (x4 - x3);
+            b2 = y4 - k2 * x4;
+        }
+
+        if (k1 === Number.POSITIVE_INFINITY && k2 === Number.POSITIVE_INFINITY) {
+            return null;
+        }
+        if (k1 === 0 && k2 === 0) {
+            return null;
+        }
+
+        let x = 0;
+        let y = 0;
+        if (k1 === Number.POSITIVE_INFINITY && k2 === 0) {
+            x = x1;
+            y = y3;
+        } else if (k1 === 0 && k2 === Number.POSITIVE_INFINITY) {
+            x = x3;
+            y = y1;
+        } else if (k1 === Number.POSITIVE_INFINITY) {
+            x = x1;
+            y = k2 * x + b2;
+        } else if (k2 === Number.POSITIVE_INFINITY) {
+            x = x3;
+            y = k1 * x + b1;
+        }else {
+            x = (b2 - b1) / (k1 - k2);
+            y = k1 * x + b1;
+        }
+
+
+        if ((x - x1) * (x - x2) <= 0 && (y - y1) * (y - y2) <= 0 && (x - x3) * (x - x4) <= 0 && (y - y4) * (y - y3) <= 0) {
+            return new Point(x, y, '#979798', 'E');
+        }
+        return null;
+    }
+
+    draw();
+
+    let downX = 0;
+    let downY = 0;
+    let pointDrag = null;
+
+    canvas.addEventListener('mousedown', (e) => {
+        downX = e.x;
+        downY = e.y;
+        if (Math.sqrt((downX - p1.x) * (downX - p1.x) + (downY - p1.y) * (downY - p1.y)) < 10) {
+            pointDrag = p1;
+            return;
+        }
+        if (Math.sqrt((downX - p2.x) * (downX - p2.x) + (downY - p2.y) * (downY - p2.y)) < 10) {
+            pointDrag = p2;
+            return;
+        }
+        if (Math.sqrt((downX - p3.x) * (downX - p3.x) + (downY - p3.y) * (downY - p3.y)) < 10) {
+            pointDrag = p3;
+            return;
+        }
+        if (Math.sqrt((downX - p4.x) * (downX - p4.x) + (downY - p4.y) * (downY - p4.y)) < 10) {
+            pointDrag = p4;
+            return;
+        }
+        pointDrag = null;
+    });
+    canvas.addEventListener('mousemove', (e) => {
+        if (!pointDrag) {
+            return;
+        }
+        pointDrag.x = e.x;
+        pointDrag.y = e.y;
+
+        draw();
+    });
+    canvas.addEventListener('mouseup', (e) => {
+        pointDrag = null;
+    });
+
+</script>
+</body>
+</html>

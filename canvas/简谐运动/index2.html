@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://unpkg.com/konva@3.1.0/konva.js"></script>
+    <title>小阻尼情形弹簧</title>
+    <style type="text/css">
+        body, html {
+            width: 100%;
+            height: 100%;
+        }
+
+        #container {
+            position: relative;
+            left: 0;
+        }
+
+        .controller {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+
+        input {
+            width: 300px;
+            display: block;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+<div id="container"></div>
+<div class="controller">
+    弹性系数<input type="range" name="弹性系数" min="0.01" max="1" value="0.08" step="0.05"
+               onchange="onSpringFactorChange(this.value)"/>
+    方块质量<input type="range" name="方块质量" min="1" max="10" value="1" step="1" onchange="onRectFactorChange(this.value)"/>
+    阻尼系数<input type="range" name="阻尼系数" min="0.1" max="0.5" value="0.1" step="0.05"
+               onchange="onDampingFactorChange(this.value)"/>
+</div>
+
+
+<script type="application/javascript">
+
+
+    const stage = new Konva.Stage({
+        container: 'container',
+        width: window.innerWidth,
+        height: window.innerHeight
+    });
+    const layer = new Konva.Layer();
+    layer.hitOnDragEnabled = false;
+    stage.add(layer);
+    const ctx = layer.getContext();
+
+    const count = 20;
+    const isCurve = true;
+    const handleLength = 50;
+    const originLength = 200;
+    let length = originLength;
+    const amplitude = 100;
+    const rotate = Math.PI / 2;
+
+
+    const rectWidth = 100;
+    const rectHeight = 100;
+    const x = layer.width() / 2;
+    const y = 0;
+    let rectCenterX = length;
+    let rectCenterY = y;
+
+    let c = 0.08; //弹性系数
+    let damping = 0.1;
+    let mass = 1; //方块的质量
+    let x0 = mass * 9.8 / c;//平衡位置
+
+    //分析小阻尼情形n < k
+    // u < Math.sqrt(4 * c* mass);
+    // const u = 0.01;//阻尼系数
+    let u = Math.sqrt(4 * c * mass) * damping;
+    let n = u / 2 / mass;
+    let w = Math.sqrt(c / mass - n * n);
+
+    function reset() {
+        x0 = mass * 9.8 / c;//平衡位置
+        u = Math.sqrt(4 * c * mass) * damping;
+        n = u / 2 / mass;
+        w = Math.sqrt(c / mass - n * n);
+        if (handler !== 0) {
+            cancelAnimationFrame(handler);
+        }
+        frame = 0;
+        handler = window.requestAnimationFrame(draw.bind(this));
+    }
+
+    function onSpringFactorChange(value) {
+        c = value;
+        reset();
+    }
+
+
+    function onRectFactorChange(value) {
+        mass = value;
+        reset();
+    }
+
+
+    function onDampingFactorChange(value) {
+        damping = value;
+        reset();
+    }
+
+    let frame = 0;
+
+    let handler = 0;
+
+    function draw() {
+        if (frame === 0) {
+            frame = Date.now();
+            handler = window.requestAnimationFrame(draw.bind(this));
+            return;
+        }
+        const t = (Date.now() - frame) / 100;
+
+        //小阻尼情形
+        length = originLength + x0 + Math.pow(Math.E, -n * t) * (x0 * Math.cos(w * t) + n * x0 / w * Math.sin(w * t));
+        rectCenterX = length;
+        ctx.clear();
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotate);
+        ctx.setAttr('strokeStyle', '#f00');
+        ctx.setAttr('lineWidth', 4);
+        ctx.setAttr('lineJoin', 'round');
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(handleLength, 0);
+        const d = (length - 2 * handleLength) / count;
+        for (let i = 0; i < count; i++) {
+            const dir = (i & 1) === 0 ? 1 : -1;
+            if (isCurve) {
+                ctx.quadraticCurveTo(handleLength + d / 2 + d * i, amplitude * dir, handleLength + d * (i + 1), 0);
+            } else {
+                ctx.lineTo(handleLength + d * (i + 0.5), amplitude * dir);
+                ctx.lineTo(handleLength + d * (i + 1), 0);
+            }
+        }
+        ctx.lineTo(length, 0);
+        ctx.stroke();
+        drawRect(rectCenterX, rectCenterY);
+        ctx.restore();
+        handler = window.requestAnimationFrame(draw.bind(this));
+    }
+
+    function drawRect(x, y) {
+        ctx.fillStyle = '#987234';
+        ctx.beginPath();
+        ctx.rect(x, y - rectHeight / 2, rectWidth, rectHeight);
+        ctx.fill();
+    }
+
+    reset();
+</script>
+</body>
+</html>

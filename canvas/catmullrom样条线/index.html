@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style type="text/css">
+
+    body, html {
+        width: 100%;
+        height: 100%;
+    }
+</style>
+</head>
+<body>
+<canvas id="target"></canvas>
+<script>
+
+    let canvas = document.getElementById("target");
+    canvas.width = document.body.clientWidth;
+    canvas.height = document.body.clientHeight;
+    let ctx = canvas.getContext("2d");
+
+    function Point(x,y){
+        this.x = x;
+        this.y = y;
+    }
+
+    let points = [
+        new Point(canvas.width * Math.random(),canvas.height * Math.random()),
+        new Point(canvas.width * Math.random(),canvas.height * Math.random()),
+        new Point(canvas.width * Math.random(),canvas.height * Math.random()),
+        new Point(canvas.width * Math.random(),canvas.height * Math.random())];
+
+
+    function draw() {
+        if(points.length<=1){
+            return;
+        }
+        ctx.fillStyle = "#a87989";
+        for (let i = 0; i < points.length; i++) {
+            ctx.beginPath();
+            ctx.arc(points[i].x,points[i].y,3,0,Math.PI*2);
+            ctx.fill()
+        }
+    }
+
+    function drawLine() {
+        if(points.length<=1){
+            return;
+        }
+        ctx.strokeStyle = "#3a9787";
+        ctx.beginPath();
+        ctx.moveTo(points[0].x,points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x,points[i].y);
+        }
+        ctx.stroke();
+    }
+
+    function drawText() {
+        if(points.length<=1){
+            return;
+        }
+        let index = 0;
+        ctx.fillStyle = "#000";
+        for (let i = 0; i < points.length; i++) {
+            ctx.beginPath();
+            ctx.fillText("P"+(index++),points[i].x,points[i].y);
+            ctx.fill()
+        }
+    }
+
+    function curveCatmullRom(p0,p1,p2,p3,t) {
+
+        return p1+ (0.5 * )
+    }
+    draw();
+    drawLine();
+    drawText();
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+  <style type="text/css">
+    body,html{
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+
+
+</head>
+<body>
+<canvas  id="target"></canvas>
+<script  type="application/javascript">
+  let canvas =  document.getElementById("target");
+  canvas.width = document.body.clientWidth;
+  canvas.height = document.body.clientHeight;
+  let ctx = canvas.getContext("2d");
+  let isDrawing = false;
+  //大圆圆心
+  let pointC1 = {x:500,y:500};
+  //大圆半径
+  let radius1 = 250;
+
+  //小圆圆心
+  let pointC2 =  {x:800,y:300};
+  //小圆半径
+  let radius2 = 100;
+
+  let eventC1 = false;
+
+
+
+  canvas.addEventListener('mousedown', e => {
+    let x = e.offsetX;
+    let y = e.offsetY;
+    isDrawing = true;
+    if(Math.pow(x - pointC1.x,2) + Math.pow(y - pointC1.y,2) <= radius1*radius1){
+      //移动大圆
+      eventC1 = true;
+      pointC1.x = x;
+      pointC1.y = y;
+    }else{
+      pointC2.x = x;
+      pointC2.y = y;
+    }
+    update();
+  });
+
+  canvas.addEventListener('mousemove', e => {
+    if (isDrawing === true) {
+      let x = e.offsetX;
+      let y = e.offsetY;
+      if(eventC1){
+        pointC1.x = x;
+        pointC1.y = y;
+      }else{
+        pointC2.x = x;
+        pointC2.y = y;
+      }
+      update();
+    }
+  });
+
+  canvas.addEventListener('mouseup', e => {
+    if (isDrawing === true) {
+      isDrawing = false;
+      eventC1 = false;
+    }
+  });
+
+
+  /**
+   * @param c1 大圆
+   * @param c2 小圆
+   * @param r1 大圆半径
+   * @param r2 小圆半径
+   * */
+  function calcOutsideQieDian(c1,c2,r1,r2) {
+    //圆心之间的距离
+    let d = Math.sqrt(Math.pow(c1.x - c2.x,2) + Math.pow(c1.y - c2.y,2));
+    //外公切线与连心线夹角的角度
+    let theta = Math.acos((r1 - r2)/d);
+    let vc1c2 = {x:c2.x - c1.x,y:-c2.y + c1.y}; //屏幕坐标系与笛卡尔坐标系是y轴是反着的
+    let radC1C2 = Math.acos(vc1c2.x / Math.sqrt(Math.pow(vc1c2.x,2) + Math.pow(vc1c2.y,2)));
+
+    console.log("radC1C2 = "+180*radC1C2/Math.PI);
+    if(c2.y <= c1.y){
+      //大圆上的切点
+      let p1 = {x:c1.x + Math.cos(theta + radC1C2) * r1,y:c1.y - Math.sin(theta + radC1C2)* r1};
+      let p2 = {x:c1.x + Math.cos(theta - radC1C2) * r1,y:c1.y + Math.sin(theta - radC1C2)* r1};
+      //小圆上的切点
+      let p3 = {x:c2.x + Math.cos(theta + radC1C2) * r2,y:c2.y - Math.sin(theta + radC1C2)* r2};
+      let p4 = {x:c2.x + Math.cos(theta - radC1C2) * r2,y:c2.y + Math.sin(theta - radC1C2)* r2};
+      return {p1:p1,p2:p2,p3:p3,p4:p4};
+    }else{
+      radC1C2 = Math.PI - radC1C2;
+      //大圆上的切点
+      let p1 = {x:c1.x + Math.cos(Math.PI - theta - radC1C2) * r1,y:c1.y + Math.sin(Math.PI - theta - radC1C2)* r1};
+      let p2 = {x:c1.x + Math.cos(Math.PI - (theta - radC1C2)) * r1,y:c1.y - Math.sin(Math.PI - (theta - radC1C2))* r1};
+      //小圆上的切点
+      let p3 = {x:c2.x + Math.cos(Math.PI - theta - radC1C2) * r2,y:c2.y + Math.sin(Math.PI - theta - radC1C2)* r2};
+      let p4 = {x:c2.x + Math.cos(Math.PI - (theta - radC1C2)) * r2,y:c2.y - Math.sin(Math.PI - (theta - radC1C2))* r2};
+      return {p1:p1,p2:p2,p3:p3,p4:p4};
+    }
+  }
+
+  /**
+   * @param c1 大圆
+   * @param c2 小圆
+   * @param r1 大圆半径
+   * @param r2 小圆半径
+   * */
+  function calcInnerQieDian(c1,c2,r1,r2) {
+    //圆心之间的距离
+    let d = Math.sqrt(Math.pow(c1.x - c2.x,2) + Math.pow(c1.y - c2.y,2));
+    //外公切线与连心线夹角的角度
+    let theta = Math.acos((r1 + r2)/d);
+    let vc1c2 = {x:c2.x - c1.x,y:-c2.y + c1.y}; //屏幕坐标系与笛卡尔坐标系是y轴是反着的
+    let radC1C2 = Math.acos(vc1c2.x / Math.sqrt(Math.pow(vc1c2.x,2) + Math.pow(vc1c2.y,2)));
+    console.log("radC1C2 = "+180*radC1C2/Math.PI);
+    if(c2.y <= c1.y){
+      //大圆上的切点
+      let p1 = {x:c1.x + Math.cos(theta + radC1C2) * r1,y:c1.y - Math.sin(theta + radC1C2)* r1};
+      let p2 = {x:c1.x + Math.cos(theta - radC1C2) * r1,y:c1.y + Math.sin(theta - radC1C2)* r1};
+      //小圆上的切点
+      let p3 = {x:c2.x + Math.cos(Math.PI - (theta - radC1C2)) * r2,y:c2.y - Math.sin(Math.PI - (theta - radC1C2))* r2};
+      let p4 = {x:c2.x + Math.cos(Math.PI - (theta + radC1C2)) * r2,y:c2.y + Math.sin(Math.PI - (theta + radC1C2))* r2};
+      return {p1:p1,p2:p2,p3:p3,p4:p4};
+    }else{
+      radC1C2 = Math.PI - radC1C2;
+      //大圆上的切点
+      let p1 = {x:c1.x + Math.cos(Math.PI - (theta + radC1C2)) * r1,y:c1.y + Math.sin(Math.PI - (theta + radC1C2))* r1};
+      let p2 = {x:c1.x + Math.cos(Math.PI - (theta - radC1C2)) * r1,y:c1.y - Math.sin(Math.PI - (theta - radC1C2))* r1};
+      //小圆上的切点
+      let p3 = {x:c2.x + Math.cos(theta - radC1C2) * r2,y:c2.y + Math.sin(theta - radC1C2)* r2};
+      let p4 = {x:c2.x + Math.cos((theta + radC1C2)) * r2,y:c2.y - Math.sin((theta + radC1C2))* r2};
+      return {p1:p1,p2:p2,p3:p3,p4:p4};
+    }
+  }
+
+  function update() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    //大圆的圆心
+    drawPoint(pointC1.x,pointC1.y,"#097734");
+    //大圆
+    drawCircle(pointC1.x,pointC1.y,radius1,"#097734");
+
+    //大圆的圆心
+    drawPoint(pointC2.x,pointC2.y,"#0a6292");
+    //大圆
+    drawCircle(pointC2.x,pointC2.y,radius2,"#0a6292");
+    drawText("C1",pointC1.x,pointC1.y);
+    drawText("C2",pointC2.x,pointC2.y);
+
+    let pinner = calcInnerQieDian(pointC1,pointC2,radius1,radius2);
+
+
+    drawText("pin1",pinner.p1.x,pinner.p1.y);
+    drawText("pin2",pinner.p2.x,pinner.p2.y);
+    drawText("pin3",pinner.p3.x,pinner.p3.y);
+    drawText("pin4",pinner.p4.x,pinner.p4.y);
+    drawPoint(pinner.p1.x,pinner.p1.y,"#097734");
+    drawPoint(pinner.p2.x,pinner.p2.y,"#097734");
+    drawPoint(pinner.p3.x,pinner.p3.y,"#097734");
+    drawPoint(pinner.p4.x,pinner.p4.y,"#097734");
+    drawLine(pointC1,pinner.p1);
+    drawLine(pointC1,pinner.p2);
+    drawLine(pointC2,pinner.p3);
+    drawLine(pointC2,pinner.p4);
+    drawLine(pinner.p1,pinner.p2);
+    drawLine(pinner.p3,pinner.p4);
+    drawLine(pinner.p1,pinner.p4);
+    drawLine(pinner.p2,pinner.p3);
+    drawLine(pointC1,pointC2);
+
+
+    let poutside = calcOutsideQieDian(pointC1,pointC2,radius1,radius2);
+    drawText("pout1",poutside.p1.x,poutside.p1.y);
+    drawText("pout2",poutside.p2.x,poutside.p2.y);
+    drawText("pout3",poutside.p3.x,poutside.p3.y);
+    drawText("pout4",poutside.p4.x,poutside.p4.y);
+    drawPoint(poutside.p1.x,poutside.p1.y,"#097734");
+    drawPoint(poutside.p2.x,poutside.p2.y,"#097734");
+    drawPoint(poutside.p3.x,poutside.p3.y,"#097734");
+    drawPoint(poutside.p4.x,poutside.p4.y,"#097734");
+    drawLine(pointC1,poutside.p1);
+    drawLine(pointC1,poutside.p2);
+    drawLine(pointC2,poutside.p3);
+    drawLine(pointC2,poutside.p4);
+    drawLine(poutside.p1,poutside.p2);
+    drawLine(poutside.p3,poutside.p4);
+
+    drawLine(poutside.p1,poutside.p3);
+    drawLine(poutside.p2,poutside.p4);
+    drawLine(pointC1,pointC2);
+  }
+
+
+  function drawText(text,x,y) {
+    ctx.beginPath();
+    ctx.font="30px Arial";
+    ctx.fillText(text,x,y);
+    ctx.stroke();
+  }
+
+  function drawCircle(x,y,radius,color){
+    ctx.beginPath();
+    ctx.fillStyle=color;
+    ctx.arc(x,y,radius,0,2*Math.PI,true);
+    ctx.stroke();
+  }
+
+  function drawPoint(x,y,color){
+    ctx.beginPath();
+    ctx.fillStyle=color;
+    ctx.arc(x,y,5,0,2*Math.PI,true);
+    ctx.fill();
+  }
+
+  function drawLine(pointStart,pointEnd) {
+    ctx.beginPath();
+    ctx.moveTo(pointStart.x,pointStart.y);
+    ctx.lineTo(pointEnd.x,pointEnd.y);
+    ctx.stroke();
+  }
+  update();
+
+</script>
+
+</body>
+</html>
