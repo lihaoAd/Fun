@@ -39,6 +39,20 @@
     let theta2 = 2 * Math.PI - Math.PI / 3;
 
 
+    function doTowers(topN, from, inter, to) {
+        if (topN === 1) {
+            console.log("Disk 1 from " + from + "  to " + to);
+        }else {
+            doTowers(topN - 1,from,to,inter);
+            console.log("Disk " + topN + " from "+ from + " to " + to);
+            doTowers(topN - 1,inter,from,to);
+        }
+
+    }
+
+    doTowers(4,"A","B","C");
+
+
     function draw() {
 
         let x = cx + r * Math.cos(theta2);
